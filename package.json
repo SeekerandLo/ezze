@@ -1,0 +1,23 @@
+{
+  "name": "ezze",
+  "version": "0.0.2",
+  "description": "翻译命令行",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "bin": {
+    "ezze": "./bin/ezze.js"
+  },
+  "keywords": [
+    "English",
+    "Chinese",
+    "Translation"
+  ],
+  "author": "seekerandlo",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.0",
+    "commander": "^6.2.0"
+  }
+}
