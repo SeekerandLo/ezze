@@ -13,7 +13,6 @@ npm install -g ezze
 ```
 ezze test
 
-
 [==========]
 
 [ 'n. 试验;考验;测验;化验;',

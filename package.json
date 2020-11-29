@@ -1,7 +1,7 @@
 {
   "name": "ezze",
-  "version": "0.0.5",
-  "description": "翻译命令行",
+  "version": "0.0.6",
+  "description": "A aranslation command line.👻",
   "main": "index.js",
   "scripts": {
     "test": "test"
@@ -18,6 +18,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.21.0",
+    "chalk": "^4.1.0",
     "commander": "^6.2.0",
     "progress": "^2.0.3"
   }
