@@ -9,7 +9,7 @@ program.
   option('-s, --screenshot', 'screenshot')
 
 program
-  .version('0.0.8', '-v, --version')
+  .version('0.0.9', '-v, --version')
   .command('ezze <query>', 'translate words or sentences')
   .action((ezze) => {
     if (ezze.screenshot) {
@@ -19,7 +19,7 @@ program
         console.log(chalk.green('  ___ ___________ '))
         console.log(chalk.green(' / _ \\_  /_  / _ \\'))
         console.log(chalk.green('|  __// / / /  __/'))
-        console.log(chalk.green(' \\___/___/___\\___| v0.0.8'))
+        console.log(chalk.green(' \\___/___/___\\___| v0.0.9'))
       } else {
         if (ezze.args.length > 1) {
           console.log(chalk.red('╮(╯-╰)╭, Please enter a word. You can wrap the content with a semicolon.'))

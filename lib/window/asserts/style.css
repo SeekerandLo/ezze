@@ -1,0 +1,167 @@
+body {
+  margin: 1px;
+}
+
+/* 滚动条样式↓ */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-button {
+  width: 4px;
+  height: 0
+}
+
+::-webkit-scrollbar-track {
+  background: 0 0
+}
+
+::-webkit-scrollbar-thumb {
+  background: #DCDFE6;
+  -webkit-transition: .3s;
+  transition: .3s
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #E4E7ED
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: #E4E7ED
+}
+
+/* 滚动条样式↑ */
+
+#background {
+  position: relative;
+}
+
+#mouse-location {
+  position: absolute;
+  z-index: 9999;
+  background: #ffffff;
+  height: 15px;
+  font-size: 10px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+}
+
+#cover-app-screen {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+#selected-region {
+  position: absolute;
+  background-color: black;
+}
+
+#function-menu {
+  position: absolute;
+  z-index: 9999;
+  background-color: beige;
+
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+}
+
+
+
+.function-name {
+  user-select: none;
+
+  font-size: 10px;
+  padding: 0 5px 0 5px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 2px 0 2px;
+
+  border-radius: 2px;
+  cursor: pointer;
+  /* border: 1px solid #ffffff; */
+}
+
+.function-name:hover {
+  /* border: 1px solid #111111; */
+  color: #409EFF;
+}
+
+#transform-panel {
+  position: absolute;
+  z-index: 9999;
+  background-color: #ffffff;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  /* min-height: 200px; */
+  /* margin-left: 2px; */
+  border-radius: 4px;
+  font-size: 14px;
+  border: 1px solid #DCDFE6;
+}
+
+#selected-screen {
+  position: absolute;
+  z-index: 9990;
+  display: none;
+}
+
+.transform-result {
+  background-color: #f0f0f0;
+  min-height: 30px;
+  min-width: 200px;
+}
+
+.text-window {
+  border: 1px solid #DCDFE6;
+  border-radius: 2px;
+  padding: 5px;
+  font-size: 12px;
+}
+
+.transform-icon-parent {
+  border: 1px solid #ffffff;
+  cursor: pointer;
+  border-radius: 4px;
+  margin: 2px 0 2px 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.transform-icon {
+  -webkit-transform: rotate(360deg);
+  animation: rotation 3s linear infinite;
+  -moz-animation: rotation 3s linear infinite;
+  -webkit-animation: rotation 3s linear infinite;
+  -o-animation: rotation 3s linear infinite;
+}
+
+@-webkit-keyframes rotation {
+  from {
+    -webkit-transform: rotate(360deg);
+  }
+
+  to {
+    -webkit-transform: rotate(0);
+  }
+}
+
+.transform-icon-parent:hover {
+  border: 1px solid #DCDFE6;
+}
+
+.transform-panel-identifying {
+  background-color: rgba(0, 0, 0, 0.1);
+}

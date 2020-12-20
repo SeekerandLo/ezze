@@ -1,14 +1,14 @@
 {
   "name": "ezze",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "A aranslation command line.👻",
   "main": "index.js",
   "scripts": {
-    "test": "test"
+    "test": "test",
+    "debug": "concurrently \"node ./bin/screen.js -s\" \"electron ./lib/window/index.js\""
   },
   "bin": {
-    "ezze": "./bin/ezze.js",
-    "ezzee": "electron ./lib/window/index.js"
+    "ezze": "./bin/ezze.js"
   },
   "keywords": [
     "English",
@@ -22,12 +22,12 @@
     "chalk": "^4.1.0",
     "commander": "^6.2.0",
     "desktop-screenshot": "^0.1.1",
+    "electron": "^11.1.0",
     "fs": "0.0.1-security",
+    "image-size": "^0.9.3",
     "progress": "^2.0.3",
     "react": "^17.0.1",
-    "react-dom": "^17.0.1"
-  },
-  "devDependencies": {
-    "electron": "^11.1.0"
+    "react-dom": "^17.0.1",
+    "tesseract.js": "^2.1.4"
   }
 }

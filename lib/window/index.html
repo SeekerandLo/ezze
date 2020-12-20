@@ -7,85 +7,40 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react-dom.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
-  <style>
-    #background {
-      position: relative;
-    }
-
-    #mouse-location {
-      position: absolute;
-      z-index: 9999;
-      background: #ffffff;
-      width: 50px;
-      height: 15px;
-      font-size: 10px;
-
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      user-select: none;
-    }
-
-    #cover-app-screen {
-      position: absolute;
-      left: 0;
-      top: 0;
-    }
-
-    #selected-region {
-      position: absolute;
-      background-color: black;
-    }
-
-    #function-menu {
-      position: absolute;
-      z-index: 9999;
-      background-color: beige;
-
-      display: flex;
-      flex-direction: row-reverse;
-      align-items: center;
-    }
-
-    .function-name {
-      font-size: 10px;
-      padding: 0 5px 0 5px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 2px 0 2px;
-
-      border-radius: 2px;
-      cursor: pointer;
-      /* border: 1px solid #ffffff; */
-    }
-
-    .function-name:hover {
-      /* border: 1px solid #111111; */
-      color: #409EFF;
-    }
-  </style>
+  <link rel="stylesheet" href="./asserts/style.css">
 </head>
 
 <body>
   <script type="text/babel">
+    const { ipcRenderer } = require('electron');
     class App extends React.Component {
       constructor(props) {
         super(props);
         this.state = {
           screenshotPath: '',
-          canvasWidth: 0,
-          canvasHeight: 0,
+          originScreenWidth: 0,
+          originScreenHeight: 0,
+          // 当前鼠标位置的x
           mouseX: 0,
+          // 当前鼠标位置的y
           mouseY: 0,
           selecting: false,
           start: false,
-          end: undefined
+          end: undefined,
+          showTransformPanel: false,
+          identifyWord: '',
+          transformResult: ''
         }
         this.rate = 0.7;
         this.renderMouseLocation = this.renderMouseLocation.bind(this);
         this.renderFunction = this.renderFunction.bind(this);
+        this.renderTransformPanel = this.renderTransformPanel.bind(this);
+        this.backToUnScreenState = this.backToUnScreenState.bind(this);
+        this.mousemove = this.mousemove.bind(this);
+        this.transform = this.transform.bind(this);
+        this.addSubscribe = this.addSubscribe.bind(this);
+        this.changeIdentifyWord = this.changeIdentifyWord.bind(this);
+        this.closeWindow = this.closeWindow.bind(this);
       }
 
       componentDidMount() {
@@ -96,7 +51,8 @@
         this.screenshotPng.src = this.screenshotPath;
 
         // 截图
-        this.appCanvas = document.getElementById('app-canvas');
+        this.originScreen = document.getElementById('origin-screen');
+        this.originScreenCanvas = document.getElementById('origin-screen').getContext('2d');
 
         // 蒙层
         this.coverApp = document.getElementById('cover-app-screen');
@@ -105,56 +61,87 @@
         // 鼠标
         this.mouse = document.getElementById('mouse-location');
 
-        // this.selectedRegion = document.getElementById('selected-region');
-        // this.selectedRegionCanvas = document.getElementById('selected-region').getContext('2d');
+        // 选择区域
+        this.selectedScreen = document.getElementById('selected-screen');
+        this.selectedScreenCanvas = document.getElementById('selected-screen').getContext('2d');
 
 
         this.fillScreenshot();
         this.drawMouseMove();
+        // 添加订阅事件
+        this.addSubscribe();
 
-        // 是否结束
-        this.isEnd = false;
+        this.coverApp.ondblclick = () => {
+          this.backToUnScreenState();
+        }
       }
 
-      // 画截图和顶部蒙层
+      // 添加渲染进程的监听事件，监听图形识别完成
+      addSubscribe() {
+        ipcRenderer.on('identify-word', (event, arg) => {
+          this.setState({
+            identifyWord: arg.identifyWord,
+            transformResult: JSON.stringify(arg.transformResult),
+            identifying: false
+          })
+        })
+      }
+
+      closeWindow() {
+        ipcRenderer.send('close-window');
+      }
+
+      changeIdentifyWord(e) {
+        const value = e.target.value;
+        this.setState({
+          identifyWord: value
+        })
+      }
+
+      backToUnScreenState() {
+        ipcRenderer.send('re-select');
+
+        const { originScreenWidth, originScreenHeight, cornerTopLeftX, cornerTopLeftY, cornerDownRightX, cornerDownRightY } = this.state;
+        this.setState({
+          selecting: false,
+          start: false,
+          end: undefined,
+          showTransformPanel: false
+        })
+        // 清除掉顶部蒙层
+        this.coverAppCanvas.clearRect(0, 0, originScreenWidth, originScreenHeight);
+        this.coverApp.onmousemove = e => this.mousemove(e);
+      }
+
+      // 画截图
       fillScreenshot() {
-        const createCanvas = this.appCanvas.getContext('2d');
         const img = new Image();
         img.src = this.screenshotPath;
         img.onload = () => {
+          console.log(img.width);
+          console.log(img.height);
           // 展示在页面上的图片的宽和高
           const showImgWidth = img.width * this.rate;
           const showImgHeight = img.height * this.rate;
 
           this.setState({
-            canvasWidth: showImgWidth,
-            canvasHeight: showImgHeight
+            originScreenWidth: showImgWidth,
+            originScreenHeight: showImgHeight
           })
 
-          createCanvas.drawImage(img, 0, 0, showImgWidth, showImgHeight);
+          this.originScreenCanvas.drawImage(img, 0, 0, showImgWidth, showImgHeight);
         };
-      }
-
-      // 画裁剪后的图片
-      drawTailorImg() {
-        const selectedScreenImg = document.getElementById('selected-screen').getContext('2d');
-        const image = new Image();
-        // images.src = t.imgUrl;
-        // image.src = 截图之后的图片路径，显示在左上角
-
       }
 
       drawMouseMove() {
         this.coverApp.onmousedown = (e) => {
-
-          const { canvasWidth, canvasHeight } = this.state;
-
-          if (!this.isEnd) {
-            console.log('按下', e);
+          const { originScreenWidth, originScreenHeight, end } = this.state;
+          console.log(end);
+          if (!end) {
             // 画蒙层
             this.coverAppCanvas.fillStyle = "rgba(0, 0, 0, 0.5)";
             // fillRect 画矩形
-            this.coverAppCanvas.fillRect(0, 0, canvasWidth, canvasHeight);
+            this.coverAppCanvas.fillRect(0, 0, originScreenWidth, originScreenHeight);
             const { pageX, pageY } = e;
             // 左上角x y坐标
             this.setState({
@@ -167,9 +154,8 @@
         }
 
         this.coverApp.onmouseup = (e) => {
-          const { cornerTopLeftX, cornerTopLeftY } = this.state;
-          if (!this.isEnd) {
-            console.log('松手', e);
+          const { cornerTopLeftX, cornerTopLeftY, end } = this.state;
+          if (!end) {
             const { pageX, pageY } = e;
             this.setState({
               cornerDownRightX: pageX,
@@ -177,70 +163,105 @@
               selecting: false,
               end: true
             });
-
             // 松手之后清除掉鼠标移动函数
             this.coverApp.onmousemove = undefined;
           }
-          this.isEnd = true;
         }
-
-        this.coverApp.onmousemove = (e) => {
-          const { pageX, pageY, mouseX, mouseY } = e;
-          const { selecting } = this.state;
-          if (selecting) {
-            const { cornerTopLeftX, cornerTopLeftY } = this.state;
-            // 只能往右下
-            this.coverAppCanvas.clearRect(cornerTopLeftX, cornerTopLeftY, pageX - cornerTopLeftX, pageY - cornerTopLeftY);
-          }
-          // console.log(pageX, mouseX, pageY, mouseY);
-          if (pageX < mouseX || pageY < mouseY) {
-            if (pageX < mouseX) {
-              console.log('左移');
-            }
-            if (pageY < mouseY) {
-              console.log('上移');
-            }
-          }
-          this.setState({
-            mouseX: pageX,
-            mouseY: pageY,
-          });
-        }
+        this.coverApp.onmousemove = e => this.mousemove(e);
       }
 
-      // 截图中
-      selecting(e) {
-        const { pageX, pageY, mouseX, mouseY } = e;
+      mousemove(e) {
+        const { pageX, pageY } = e;
         const { selecting } = this.state;
         if (selecting) {
           const { cornerTopLeftX, cornerTopLeftY } = this.state;
           // 只能往右下
           this.coverAppCanvas.clearRect(cornerTopLeftX, cornerTopLeftY, pageX - cornerTopLeftX, pageY - cornerTopLeftY);
+          this.setState({
+            mouseX: pageX,
+            mouseY: pageY,
+            cornerDownRightX: pageX,
+            cornerDownRightY: pageY
+          });
         }
-        // console.log(pageX, mouseX, pageY, mouseY);
-        if (pageX < mouseX || pageY < mouseY) {
-          if (pageX < mouseX) {
-            console.log('左移');
-          }
-          if (pageY < mouseY) {
-            console.log('上移');
-          }
-        }
+      }
+
+      // 保存选择的区域
+      transform() {
+        const { cornerTopLeftX, cornerTopLeftY, cornerDownRightX, cornerDownRightY } = this.state;
+        const width = cornerDownRightX - cornerTopLeftX;
+        const height = cornerDownRightY - cornerTopLeftY;
+        console.log({
+          x: cornerTopLeftX,
+          y: cornerTopLeftY,
+          width: width,
+          height: height
+        })
+        const selectedScreenData = this.originScreenCanvas.getImageData(cornerTopLeftX, cornerTopLeftY, width, height);
+        this.selectedScreenCanvas.putImageData(selectedScreenData, 0, 0);
+        // 发生选中数据base64
+        ipcRenderer.send('transform-selected-screen-base64', this.selectedScreen.toDataURL())
+
         this.setState({
-          mouseX: pageX,
-          mouseY: pageY,
-        });
+          showTransformPanel: true,
+          identifying: true
+        })
+      }
+
+      renderTransformPanel() {
+        const { identifying, identifyWord, transformResult, showTransformPanel, cornerDownRightY, cornerDownRightX, cornerTopLeftY, cornerTopLeftX } = this.state;
+        if (showTransformPanel) {
+          if (identifying) {
+            return (
+              <div id="transform-panel" className='transform-panel-identifying' style={{ top: cornerDownRightY + 25, left: cornerTopLeftX }}>
+                <div>
+                  <div style={{ marginBottom: 5, fontWeight: 'bold' }}>识别中...</div>
+                  <textarea disabled className="text-window" style={{ minWidth: 200 }}>
+                  </textarea>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <div className="transform-icon-parent">
+                    <image src="./asserts/png/transform.png" className="transform-icon"></image>
+                  </div>
+                </div>
+                <div>
+                  <textarea disabled className="text-window transform-result">
+                  </textarea>
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div id="transform-panel" style={{ top: cornerDownRightY + 25, left: cornerTopLeftX }}>
+              <div style={{}}>
+                <div style={{ marginBottom: 5, fontWeight: 'bold' }}>识别结果</div>
+                <textarea onChange={this.changeIdentifyWord} value={identifyWord} className="text-window" style={{ minWidth: 200 }}>
+                </textarea>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <div className="transform-icon-parent">
+                  <image src="./asserts/png/transform.png"></image>
+                </div>
+              </div>
+              <div>
+                <textarea value={transformResult} className="text-window transform-result">
+                </textarea>
+              </div>
+            </div>
+          );
+        }
+        return null;
       }
 
       renderMouseLocation() {
-        const { selecting, start, mouseX, mouseY, cornerTopLeftX, cornerTopLeftY } = this.state;
+        const { selecting, start, mouseX, mouseY, cornerTopLeftX, cornerTopLeftY, cornerDownRightX, cornerDownRightY } = this.state;
         // 拖动中开始展示
 
         // 拖动结束也展示
         if (start) {
           return (
             <div id="mouse-location" style={{ left: cornerTopLeftX, top: cornerTopLeftY - 20 }}>
-              {`${mouseX} x ${mouseY}`}
+              {`width x height : ${mouseX - cornerTopLeftX} x ${mouseY - cornerTopLeftY}`}
             </div>
           );
         }
@@ -248,17 +269,21 @@
       }
 
       renderFunction() {
-        const { isEnd } = this;
         const { end, cornerDownRightX, cornerDownRightY, cornerTopLeftX, cornerTopLeftY } = this.state;
         if (end) {
           return (
-            <div id="function-menu" style={{ background: '#ffffff', width: cornerDownRightX - cornerTopLeftX, height: 22, top: cornerDownRightY + 2, left: cornerTopLeftX, borderRadius: 4 }}>
-              <div className="function-name">
+            <div id="function-menu" style={{ background: '#ffffff', height: 22, top: cornerDownRightY + 2, left: cornerTopLeftX, borderRadius: 4 }}>
+              <div className="function-name" onClick={this.transform}>
                 翻译
               </div>
               <div style={{ width: 0.5, height: '50%', margin: '0 2px 0 2px', background: '#e6e6e6' }}>
               </div>
-              <div className="function-name">
+              <div className="function-name" onClick={this.backToUnScreenState}>
+                重选
+              </div>
+              <div style={{ width: 0.5, height: '50%', margin: '0 2px 0 2px', background: '#e6e6e6' }}>
+              </div>
+              <div className="function-name" onClick={this.closeWindow}>
                 关闭
               </div>
             </div>
@@ -268,18 +293,17 @@
       }
 
       render() {
-              // <image className="function-name" src="./asserts/close.png" style={{ width: 20, height: 20 }}></image>
-        // <canvas id="selected-region" style={{ left: cornerTopLeftX, top: cornerTopLeftY, width: cornerDownRightX - cornerTopLeftX, height: cornerDownRightY - cornerTopLeftY }}>
-        //     </canvas>
-        const { screenshotPath, canvasWidth, canvasHeight, mouseX, mouseY, cornerTopLeftX, cornerTopLeftY, cornerDownRightX, cornerDownRightY } = this.state;
+        const { screenshotPath, originScreenWidth, originScreenHeight, cornerTopLeftX, cornerTopLeftY, cornerDownRightX, cornerDownRightY } = this.state;
         return (
           <div id="background">
             {this.renderMouseLocation()}
             {this.renderFunction()}
-            <canvas id="cover-app-screen" width={canvasWidth} height={canvasHeight}>
+            {this.renderTransformPanel()}
+            <canvas id="cover-app-screen" width={originScreenWidth} height={originScreenHeight}>
             </canvas>
-            <canvas id='app-canvas' width={canvasWidth} height={canvasHeight}>
+            <canvas id='origin-screen' width={originScreenWidth} height={originScreenHeight}>
             </canvas>
+            <canvas id="selected-screen" width={cornerDownRightX - cornerTopLeftX} height={cornerDownRightY - cornerTopLeftY}></canvas>
           </div >
         )
       }
