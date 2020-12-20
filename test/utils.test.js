@@ -1,3 +1,6 @@
 const EzzeUtils = require('../lib/utils');
 
-EzzeUtils.loadConfig();
+const path = EzzeUtils.ezzePath();
+console.log(path);
+
+`echo %USERPROFILE%`
