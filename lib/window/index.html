@@ -29,12 +29,14 @@
           end: undefined,
           showTransformPanel: false,
           identifyWord: '',
+          identifyProcess: [],
           transformResult: ''
         }
-        this.rate = 0.7;
+        this.rate = 1;
         this.renderMouseLocation = this.renderMouseLocation.bind(this);
         this.renderFunction = this.renderFunction.bind(this);
         this.renderTransformPanel = this.renderTransformPanel.bind(this);
+        this.renderIdentifyProcess = this.renderIdentifyProcess.bind(this);
         this.backToUnScreenState = this.backToUnScreenState.bind(this);
         this.mousemove = this.mousemove.bind(this);
         this.transform = this.transform.bind(this);
@@ -81,10 +83,21 @@
         ipcRenderer.on('identify-word', (event, arg) => {
           this.setState({
             identifyWord: arg.identifyWord,
-            transformResult: JSON.stringify(arg.transformResult),
+            // 获取第一个翻译结果
+            transformResult: JSON.stringify(arg.transformResult[0].dst),
             identifying: false
           })
-        })
+        });
+
+        ipcRenderer.on('identify-word-process', (event, arg) => {
+          console.log(arg);
+          let { identifyProcess } = this.state;
+          identifyProcess.push(arg.process)
+          console.log(identifyProcess);
+          this.setState({
+            identifyProcess
+          })
+        });
       }
 
       closeWindow() {
@@ -130,6 +143,8 @@
           })
 
           this.originScreenCanvas.drawImage(img, 0, 0, showImgWidth, showImgHeight);
+          this.coverAppCanvas.fillStyle = "rgba(1, 1, 1, 0)";
+          this.coverAppCanvas.fillRect(0, 0, showImgWidth, showImgHeight);
         };
       }
 
@@ -138,10 +153,6 @@
           const { originScreenWidth, originScreenHeight, end } = this.state;
           console.log(end);
           if (!end) {
-            // 画蒙层
-            this.coverAppCanvas.fillStyle = "rgba(0, 0, 0, 0.5)";
-            // fillRect 画矩形
-            this.coverAppCanvas.fillRect(0, 0, originScreenWidth, originScreenHeight);
             const { pageX, pageY } = e;
             // 左上角x y坐标
             this.setState({
@@ -154,7 +165,7 @@
         }
 
         this.coverApp.onmouseup = (e) => {
-          const { cornerTopLeftX, cornerTopLeftY, end } = this.state;
+          const { cornerTopLeftX, cornerTopLeftY, end, originScreenWidth, originScreenHeight } = this.state;
           if (!end) {
             const { pageX, pageY } = e;
             this.setState({
@@ -163,6 +174,11 @@
               selecting: false,
               end: true
             });
+
+            this.coverAppCanvas.fillStyle = "rgba(0, 0, 0, 0.5)";
+            // fillRect 画矩形
+            this.coverAppCanvas.fillRect(0, 0, originScreenWidth, originScreenHeight);
+            this.coverAppCanvas.clearRect(cornerTopLeftX, cornerTopLeftY, pageX - cornerTopLeftX, pageY - cornerTopLeftY);
             // 松手之后清除掉鼠标移动函数
             this.coverApp.onmousemove = undefined;
           }
@@ -174,9 +190,14 @@
         const { pageX, pageY } = e;
         const { selecting } = this.state;
         if (selecting) {
-          const { cornerTopLeftX, cornerTopLeftY } = this.state;
-          // 只能往右下
-          this.coverAppCanvas.clearRect(cornerTopLeftX, cornerTopLeftY, pageX - cornerTopLeftX, pageY - cornerTopLeftY);
+          const { cornerTopLeftX, cornerTopLeftY, cornerDownRightX, cornerDownRightY, originScreenWidth, originScreenHeight } = this.state;
+          this.coverAppCanvas.clearRect(0, 0, originScreenWidth, originScreenHeight);
+          this.coverAppCanvas.strokeStyle = "#dcdfe6";
+          this.coverAppCanvas.lineWidth = 1;
+          // fillRect 画矩形
+          this.coverAppCanvas.fillStyle = "rgba(230,247,255, 0.1)";
+          this.coverAppCanvas.fillRect(cornerTopLeftX, cornerTopLeftY, pageX - cornerTopLeftX, pageY - cornerTopLeftY);
+          this.coverAppCanvas.strokeRect(cornerTopLeftX, cornerTopLeftY, pageX - cornerTopLeftX, pageY - cornerTopLeftY);
           this.setState({
             mouseX: pageX,
             mouseY: pageY,
@@ -208,25 +229,29 @@
         })
       }
 
+      renderIdentifyProcess() {
+        const { identifyProcess } = this.state;
+        return identifyProcess.map(process => <div>
+          {process.status} ({process.progress.toFixed(2) * 100} %)
+        </div>);
+      }
+
       renderTransformPanel() {
-        const { identifying, identifyWord, transformResult, showTransformPanel, cornerDownRightY, cornerDownRightX, cornerTopLeftY, cornerTopLeftX } = this.state;
+        const { identifying, identifyWord, identifyProcess, transformResult, showTransformPanel, cornerDownRightY, cornerDownRightX, cornerTopLeftY, cornerTopLeftX } = this.state;
         if (showTransformPanel) {
           if (identifying) {
             return (
               <div id="transform-panel" className='transform-panel-identifying' style={{ top: cornerDownRightY + 25, left: cornerTopLeftX }}>
                 <div>
-                  <div style={{ marginBottom: 5, fontWeight: 'bold' }}>识别中...</div>
-                  <textarea disabled className="text-window" style={{ minWidth: 200 }}>
-                  </textarea>
+                  <div style={{ marginBottom: 5, fontWeight: 'bold' }}>识别中...进度如下</div>
+                  <div className="text-window" style={{ minWidth: 200, maxHeight: 300, overflow: 'scroll' }}>
+                    {this.renderIdentifyProcess()}
+                  </div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                   <div className="transform-icon-parent">
                     <image src="./asserts/png/transform.png" className="transform-icon"></image>
                   </div>
-                </div>
-                <div>
-                  <textarea disabled className="text-window transform-result">
-                  </textarea>
                 </div>
               </div>
             );
@@ -255,13 +280,10 @@
 
       renderMouseLocation() {
         const { selecting, start, mouseX, mouseY, cornerTopLeftX, cornerTopLeftY, cornerDownRightX, cornerDownRightY } = this.state;
-        // 拖动中开始展示
-
-        // 拖动结束也展示
         if (start) {
           return (
             <div id="mouse-location" style={{ left: cornerTopLeftX, top: cornerTopLeftY - 20 }}>
-              {`width x height : ${mouseX - cornerTopLeftX} x ${mouseY - cornerTopLeftY}`}
+              {`width x height : ${Math.abs(mouseX - cornerTopLeftX)} x ${Math.abs(mouseY - cornerTopLeftY)}`}
             </div>
           );
         }
@@ -292,11 +314,12 @@
         return null;
       }
 
+
       render() {
+        // {this.renderMouseLocation()}
         const { screenshotPath, originScreenWidth, originScreenHeight, cornerTopLeftX, cornerTopLeftY, cornerDownRightX, cornerDownRightY } = this.state;
         return (
           <div id="background">
-            {this.renderMouseLocation()}
             {this.renderFunction()}
             {this.renderTransformPanel()}
             <canvas id="cover-app-screen" width={originScreenWidth} height={originScreenHeight}>

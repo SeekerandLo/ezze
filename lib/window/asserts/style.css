@@ -19,17 +19,17 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #DCDFE6;
+  background: #dcdfe6;
   -webkit-transition: .3s;
   transition: .3s
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #E4E7ED
+  background-color: #e4e7ed
 }
 
 ::-webkit-scrollbar-thumb:active {
-  background-color: #E4E7ED
+  background-color: #e4e7ed
 }
 
 /* 滚动条样式↑ */
@@ -49,12 +49,16 @@ body {
   justify-content: center;
   align-items: center;
   user-select: none;
+
+  padding: 0 5px 0 5px;
+  border-radius: 4px;
 }
 
 #cover-app-screen {
   position: absolute;
   left: 0;
   top: 0;
+  cursor: crosshair;
 }
 
 #selected-region {
@@ -107,7 +111,7 @@ body {
   /* margin-left: 2px; */
   border-radius: 4px;
   font-size: 14px;
-  border: 1px solid #DCDFE6;
+  border: 1px solid #dcdfe6;
 }
 
 #selected-screen {
@@ -123,7 +127,7 @@ body {
 }
 
 .text-window {
-  border: 1px solid #DCDFE6;
+  border: 1px solid #dcdfe6;
   border-radius: 2px;
   padding: 5px;
   font-size: 12px;
@@ -159,7 +163,7 @@ body {
 }
 
 .transform-icon-parent:hover {
-  border: 1px solid #DCDFE6;
+  border: 1px solid #dcdfe6;
 }
 
 .transform-panel-identifying {
