@@ -90,10 +90,8 @@
         });
 
         ipcRenderer.on('identify-word-process', (event, arg) => {
-          console.log(arg);
           let { identifyProcess } = this.state;
           identifyProcess.push(arg.process)
-          console.log(identifyProcess);
           this.setState({
             identifyProcess
           })
@@ -131,8 +129,6 @@
         const img = new Image();
         img.src = this.screenshotPath;
         img.onload = () => {
-          console.log(img.width);
-          console.log(img.height);
           // 展示在页面上的图片的宽和高
           const showImgWidth = img.width * this.rate;
           const showImgHeight = img.height * this.rate;
@@ -151,7 +147,6 @@
       drawMouseMove() {
         this.coverApp.onmousedown = (e) => {
           const { originScreenWidth, originScreenHeight, end } = this.state;
-          console.log(end);
           if (!end) {
             const { pageX, pageY } = e;
             // 左上角x y坐标
@@ -212,12 +207,7 @@
         const { cornerTopLeftX, cornerTopLeftY, cornerDownRightX, cornerDownRightY } = this.state;
         const width = cornerDownRightX - cornerTopLeftX;
         const height = cornerDownRightY - cornerTopLeftY;
-        console.log({
-          x: cornerTopLeftX,
-          y: cornerTopLeftY,
-          width: width,
-          height: height
-        })
+
         const selectedScreenData = this.originScreenCanvas.getImageData(cornerTopLeftX, cornerTopLeftY, width, height);
         this.selectedScreenCanvas.putImageData(selectedScreenData, 0, 0);
         // 发生选中数据base64

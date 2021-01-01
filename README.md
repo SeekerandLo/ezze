@@ -50,6 +50,10 @@ JavaScript library for building user interface
 ezze -s
 ```
 
+- mac 下暂时只支持使用 nvm 管理 node 版本的
+- windows 下暂时只支持直接安装 node 的
+
+![ezze-s](./images/ezze_s.gif)
 
 
 
